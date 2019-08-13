@@ -19,7 +19,7 @@ bordBassin1 = 17 #id de l'aruco en (0,0) du bassin
 bordBassin2 = 10 #id de l'aruco (0,MaxY) du bassin
 ############# #Check adresse avec IPUtility #################################
 #############################################################################
-adressCam = 'http://root:1234@169.254.236.203/mjpg/video.mjpg'   
+adressCam = 'http://root:1234@169.254.206.22/mjpg/video.mjpg'   
 #############################################################################
 #############################################################################
 
@@ -51,22 +51,26 @@ class Cam(Thread):
     def run(self):
         cv2.namedWindow('Webcam', cv2.WINDOW_NORMAL)
         
-        saveData = open("saveData.txt","w") 
-
 
         cap1 = cv2.VideoCapture()
         cap1.open(adressCam) 
         
         
-        neutreServo, neutreMoteur = 1090, 1970
+        neutreServo, neutreMoteur = 1090, 2000
         commandes = np.array([[neutreServo], [neutreMoteur]])
         
-        Waypoints = [[0,   2,   2,   0.5],#X
-                     [2.5, 2.5, 0.5, 0.5]]#Y
+        Waypoints = [[1,   2.5],#X
+                     [1.5, 1.5]]#Y
+#        line1 = [[1,   2.5],#X
+#                 [1, 1]]#Y
+#        line2 = [[2.5, 1],#X
+#                 [2, 2]]#Y
+#        followLine = line1
+
     
 
         
-        vTarget = 0.38
+        vTarget = 0.30*0
 #        xTarget = 3.5
 #        yTarget = 0.5
 #        a = np.array([[4], [0]])    
@@ -75,12 +79,25 @@ class Cam(Thread):
         for k in range(len(Waypoints[0])-1):
             a = np.array([[Waypoints[0][k]], [Waypoints[1][k]]])
             b = np.array([[Waypoints[0][k+1]], [Waypoints[1][k+1]]])
+#        a = np.array([[followLine[0][0]], [followLine[1][0]]])
+#        b = np.array([[followLine[0][1]], [followLine[1][1]]])
+#
 
             print('Acquisition running...')
-            while(cap1.isOpened()) and ((b-a).T @ (b-X[:2])) / (norm(b-a)*norm(b-X[:2])) >= 0:
+            while(True):# and ((b-a).T @ (b-X[:2])) / (norm(b-a)*norm(b-X[:2])) >= 0:
                 
-                xBoat, yBoat,theta = run_one_step(cap1,a,b,self.newcameramtx, self.roi, self.mtx, self.dist)
-    
+                print("---- Ligne :\n", a ,b)
+                if ((b-a).T @ (b-X[:2])) < 0:
+                    bOld = b
+                    b = a
+                    a = bOld
+                    
+                xBoat, yBoat,theta, key = run_one_step(cap1,a,b,self.newcameramtx, self.roi, self.mtx, self.dist)
+                if key == 27: #  echap to quit
+                    self.message = str((999,999,999,0,0))
+                    self.is_dead = "dead"
+                    break
+
                 
     # =============================================================================
     #             Bloc régulation
@@ -90,21 +107,20 @@ class Cam(Thread):
                 
                 posServo = commandes[0,0]
                 posMoteur = commandes[1,0]
-                
                 if not xBoat is None: #si le bateau n'est pas vu sur la camera -> soustraction sur un None = Bug
                 
                     X = np.array([[xBoat], [yBoat], [theta], [posServo], [posMoteur]])
 #                    print("----VTarget :",vTarget)
-                    commandes = getCommande(X, a, b, vTarget, commandes)  #Appel module regulation
+                    commandes = getCommande(X, a, b, vTarget)  #Appel module regulation
 #                    print("---- Commandes: ", commandes)
                     if commandes[1,0] >= 0:
-                        self.commande = (175*commandes[0,0]+neutreServo, (238*commandes[1,0]) + 2000)
-                    if commandes[1,0] < 0:
-                        self.commande = (175*commandes[0,0]+neutreServo, (390*abs(commandes[1,0])) + 3000)
-                
-                    self.commande = (neutreServo, neutreMoteur) #on retire la regualtion
+                        self.commande = (175*commandes[0,0]+neutreServo, (238*commandes[1,0]) + neutreMoteur)
+#                    if commandes[1,0] < 0:
+#                        self.commande = (175*commandes[0,0]+neutreServo, (390*abs(commandes[1,0])) + 3000)
+#                    self.commande = (neutreServo, neutreMoteur) #on retire la regualtion
                 elif xBoat is None:
-                    self.commande = (neutreServo, neutreMoteur) #on arrete le bateau si on ne le voit pas 
+                    print("No Boat -> Regulation remains the same")
+#                    self.commande = (neutreServo, neutreMoteur) #on arrete le bateau si on ne le voit pas 
     
     # =============================================================================
     #             Expédition des données utiles en aval
@@ -113,7 +129,6 @@ class Cam(Thread):
     
                     print("X = ", xBoat, "\nY = ", yBoat, "\ntheta =", math.degrees(theta))                
                     self.message = str( (xBoat , yBoat, theta) + self.commande)
-                    saveData.write(str(xBoat)+" "+str(yBoat)+" "+str(theta)+" "+str(commandes[0,0])+" "+str(commandes[1,0])+"\n")
 
                 
                 if xBoat == None or yBoat == None:
@@ -127,12 +142,6 @@ class Cam(Thread):
     #             Fin du programme
     # =============================================================================
             
-            key = cv2.waitKey(1) & 0xFF
-            if key == 27: #  echap to quit
-                self.message = str((999,999,999,0,0))
-                self.is_dead = "dead"
-                saveData.close()
-                break
             
         print('Acquisition ended.')
         cap1.release()
@@ -400,8 +409,6 @@ def run_one_step(cap1,a,b, newcameramtx, roi, mtx, dist):
     if ret1:
         corners1, ids1 = detectAruco(frame1)
         aruco.drawDetectedMarkers(frame1, corners1, ids1)
-#        drawPoint(frame1,a)
-#        drawPoint(frame1,b)
 
 
         
@@ -413,31 +420,30 @@ def run_one_step(cap1,a,b, newcameramtx, roi, mtx, dist):
             xBoat, yBoat = getPosition(corners1, ids1, frame1)
             
             drawBoat(frame1, xBoat, yBoat)
-            cv2.imshow("Webcam", frame1)
+            
 
             
         else: #le bateau n'est sur aucune camera
             print("ERROR : No boat detected")
             print("bordBasssin = ", bordBassin)
             print("ids = ", ids1)
-            cv2.imshow("Webcam", frame1)
 
-
-            return None, None, None
+            return None, None, None, 255
         
         
 
         
     else: #le bateau n'est sur aucune camera
             print("ERROR : No image")
-            return None, None, None
+            return None, None, None, 255
     
 #    aruco.drawDetectedMarkers(frame1, corners1, ids1)
-            
+    cv2.imshow("Webcam", frame1)
+    key = cv2.waitKey(1) & 0xFF
     if math.isnan(theta):
-        return -1,-1,-1
+        return -1,-1,-1, key
     
-    return xBoat, yBoat,theta
+    return xBoat, yBoat,theta, key
 
 
 

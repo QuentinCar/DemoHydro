@@ -104,18 +104,22 @@ def maxFloat(x,y):
     
 # =============================================================================
 # Fonction à appeler depuis le module PosRegul
+#----- Update Mer XXL -----
+#La regulation est ici maintenant
+#--------------------------
 # =============================================================================
 
 def getCommande(X, a, b, vTarget, commande_precedente):
     
-    consigne = getConsignes(X, a, b, vTarget)
-    commande = dCommande(X, consigne)
+#    consigne = getConsignes(X, a, b, vTarget)
+#    commande = dCommande(X, consigne)
     
+    commande = []
     d = b-a
     e = det( hstack(( X[:2]-a, d/norm(d) )) )
     capTarget = atan2(d[1], d[0]) + 0.5*arctan(e)
     deltaTarget = capTarget - X[2]
-#    print("---- deltaTarget : ", deltaTarget)
+    
     if math.cos(deltaTarget) >= 0:
         commande[0,0] = -angle_max*math.sin(deltaTarget)
     else:
@@ -124,8 +128,8 @@ def getCommande(X, a, b, vTarget, commande_precedente):
         else: 
             commande[0,0] = angle_max
    
-    commande[1,0] = 0.6
-    #commande = commande_precedente + dt*dU
+    commande[1,0] = vTarget
+
     commande[0, 0] = maxFloat(-angle_max, minFloat(commande[0,0] , angle_max))
     commande[1, 0] = maxFloat(-vmax, minFloat(commande[1,0] , vmax))
     

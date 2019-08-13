@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jan 27 22:46:28 2019
-
-@author: Matthieu
 SOCKETS : 
 https://openclassrooms.com/fr/courses/235344-apprenez-a-programmer-en-python/234698-le-reseau
 THREADS:
@@ -44,9 +42,8 @@ thread_listening.start()
 #------------- Init pour l'affichage de le Scatter-------------
 ###############################################################
 figScat = plt.figure(0)
-plt.title("Représentation locale du bassin")
 
-min, max = (-1, 0) #max and min for the colorbar (in meters)
+min, max = (-3, 0) #max and min for the colorbar (in meters)
 step = 0.01
 
 # Setting up a colormap that's a simple transtion
@@ -57,13 +54,14 @@ Z = [[0,0],[0,0]]
 levels = np.arange(min,max+step,step)
 CS3 = plt.contourf(Z, levels, cmap=mymap)
 plt.clf()
+plt.title("Données Sonar")
 
 ax = figScat.add_subplot(111)
 
 cb = plt.colorbar(CS3, orientation= "horizontal") # using the colorbar info I got from contourf
 
-plt.xlim(0,5.2)
-plt.ylim(0,10.2)
+plt.xlim(0,3)
+plt.ylim(0,4)
 #plt.axis('off')
 
 
@@ -83,11 +81,11 @@ nbPlot = 0 #contient le nombre de plot fait sur le scatter
 #------------ Init pour l'affichage de le Contourf-----------
 #############################################################
 figCont = plt.figure(1)
-plt.title("Représentation globale du bassin")
 Z = [[0,0],[0,0]]
 levels = np.arange(min,max+step,step)
 Cont = plt.contourf(Z, levels, cmap="brg")
 plt.clf()
+plt.title("Représentation du bassin")
 
 ax = figCont.add_subplot(111)
 
@@ -107,16 +105,16 @@ while alive.is_set():
     if X != []:
 #        print("BATH")
         #Représentation 3D en 2D
-        #bathy 3d avec scatter couleur entre -1 et 0 m
-        #voir plotGauss?py pour avoir une idée des coefficients std
+        #bathy 3d avec scatter couleur entre -3 et 0 m
+        #voir plotGauss.py pour avoir une idée des coefficients std
         for x,y,z in zip(X,Y,Z):
-            if xBoat > 0 and yBoat > 0 and xBoat < 10.2 and yBoat < 5.2:
-                std = 0.2
-                r = 2.5*std*scipy.stats.norm.pdf(z,-0.5,std)
+            if xBoat > 0 and yBoat > 0 and xBoat < 4 and yBoat < 3:
+                std = 0.4
+                r = 2.5*std*scipy.stats.norm.pdf(z,-1.5,std)
                 g = 2.5*std*scipy.stats.norm.pdf(z,0,std)
-                b = 2.5*std*scipy.stats.norm.pdf(z,-1,std)
+                b = 2.5*std*scipy.stats.norm.pdf(z,-3,std)
             
-                col = np.array([[r,g,b]]) #blue if z = -1, green if z = 0, red if z = -0.5
+                col = np.array([[r,g,b]]) #blue if z = -3, green if z = 0, red if z = -1.5
                 plt.figure(0)
                 plt.scatter(y, x, marker = 'o', c = col)
                 
@@ -124,7 +122,7 @@ while alive.is_set():
                 Y_Cont.append(x)
                 Z_Cont.append(z)
             
-        if xBoat > 0 and yBoat > 0 and xBoat < 10.2 and yBoat < 5.2:
+        if xBoat > 0 and yBoat > 0 and xBoat < 4 and yBoat < 3:
             plt.figure(0)
             plt.plot(yBoat, xBoat, marker = 'x', color = 'yellow')
         
@@ -141,10 +139,10 @@ while alive.is_set():
             plt.cla()
 #            print("-------------Update Bathymetrie------------")
 
-            plt.title("Représentation locale du bassin")
+            plt.title("Données Sonar")
             ax = figScat.add_subplot(111)
-            plt.xlim(0,5.2)
-            plt.ylim(0,10.2)
+            plt.xlim(0,3)
+            plt.ylim(0,4)
             plt.gca().invert_xaxis() #on inverse l'axe x (correspond au y de l'image)
             ax.yaxis.tick_right()
 
@@ -160,16 +158,16 @@ while alive.is_set():
             print("-------------Update Bathymetrie------------")
             
             pas = 1/5
-            ZCont = -1*np.ones((int(10.2/pas), int(5.2/pas)))
-            XCont = np.linspace(0,5.2,np.shape(ZCont)[1])
-            YCont = np.linspace(0,10.2,np.shape(ZCont)[0])               
+            ZCont = -1*np.ones((int(4/pas), int(3/pas)))
+            XCont = np.linspace(0,3,np.shape(ZCont)[1])
+            YCont = np.linspace(0,4,np.shape(ZCont)[0])               
             
             
             for ind in range(len(X_Cont)): 
                 ZCont[int(Y_Cont[ind]/pas)][int(X_Cont[ind]/pas)] = np.mean([ZCont[int(Y_Cont[ind]/pas)][int(X_Cont[ind]/pas)], Z_Cont[ind]])
          
             plt.figure(1)
-            plt.title("Représentation globale du bassin")
+            plt.title("Représentation du bassin")
             Cont = plt.contourf(XCont, YCont, ZCont, levels = levels, cmap="brg")
             plt.draw()
             

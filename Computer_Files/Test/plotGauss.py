@@ -12,15 +12,15 @@ import numpy as np
 x_min = -4
 x_max = 1
 
-std = 0.2
+std = 0.4
 
 x = np.linspace(x_min, x_max, 100)
 
-y = 2.5*std*scipy.stats.norm.pdf(x,-1,std)
+y = 2.5*std*scipy.stats.norm.pdf(x,-3,std)
 
 plt.plot(x,y, color='red')
 
-y = 2.5*std*scipy.stats.norm.pdf(x,-0.5,std)
+y = 2.5*std*scipy.stats.norm.pdf(x,-1.5,std)
 
 plt.plot(x,y, color='blue')
 
@@ -34,10 +34,10 @@ plt.grid()
 
 plt.xlim(x_min,x_max)
 plt.ylim(0,1.2)
-
+plt.scatter(-1.5, 0.5, marker = 'o', c = np.array([[0,0,0]])/255)
 plt.title('How to plot a normal distribution in python with matplotlib',fontsize=10)
 
 plt.xlabel('x')
 plt.ylabel('Normal Distribution')
 
-plt.pause(2)
+#plt.pause(2)

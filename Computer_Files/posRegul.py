@@ -5,18 +5,21 @@ import cv2.fisheye as fisheye
 import math
 import time
 from threading import Thread
-from regulation2 import getCommande
+from lineRegulation import getCommande
 from numpy.linalg import norm
 
 from calibrate_camera import calibration, undistort
 
 
 bordBassin = dict() #pour la position des aruco sur le bord
+boatAV = 34 #id de l'aruco AV du bateau
+boatAR = 15 #id de l'aruco AR du bateau
 
+bordBassin1 = 17 #id de l'aruco en (0,0) du bassin
+bordBassin2 = 10 #id de l'aruco (0,MaxY) du bassin
 ############# #Check adresse avec IPUtility #################################
 #############################################################################
-#adressCam = 'http://root:1234@169.254.236.203/mjpg/video.mjpg'   #Pour Quentin
-adressCam = 'http://root:1234@169.254.236.203/mjpg/video.mjpg'   #Pour Matthieu
+adressCam = 'http://root:1234@169.254.236.203/mjpg/video.mjpg'   
 #############################################################################
 #############################################################################
 
@@ -100,8 +103,8 @@ class Cam(Thread):
                         self.commande = (175*commandes[0,0]+neutreServo, (390*abs(commandes[1,0])) + 3000)
                 
                     self.commande = (neutreServo, neutreMoteur) #on retire la regualtion
-#                elif xBoat is None:
-#                    self.commande = (neutreServo, neutreMoteur) #on arrete le bateau si on ne le voit pas 
+                elif xBoat is None:
+                    self.commande = (neutreServo, neutreMoteur) #on arrete le bateau si on ne le voit pas 
     
     # =============================================================================
     #             Expédition des données utiles en aval
@@ -221,7 +224,7 @@ def getTheta():
     Return:
         angle de rotation entre bordBassin et camera axis
     """
-    return math.pi/2 - math.atan2(bordBassin[10][1] - bordBassin[0][1], bordBassin[10][0] - bordBassin[0][0])
+    return math.pi/2 - math.atan2(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1], bordBassin[bordBassin2][0] - bordBassin[bordBassin1][0])
 
     
 def getRotationMatrix(theta):
@@ -240,13 +243,13 @@ def getBordBassin(corners1, ids1):
     corners1 : Corner de la frame
     ids1 : id de la frame
     
-    -> Met bordBassin à jour avec les arucos (sauf 4 et 5)
+    -> Met bordBassin à jour avec les arucos (sauf boatAV et boatAR)
     """
     #------ On recupère le bords du bassin ---------
         
     if not(ids1 is None) and len(ids1) > 0: 
         for id in ids1:
-            if id != 4 and id != 5:
+            if id != boatAV and id != boatAR:
                 
                 i,j = np.where(ids1 == id)
                 
@@ -276,8 +279,8 @@ def getPosition(corners1, ids1, frame1):
     getBordBassin(corners1, ids1)    
     #------ On recupère la position du bateau -------
     
-    i,j = np.where(ids1 == 4)
-    k,l = np.where(ids1 == 5)
+    i,j = np.where(ids1 == boatAR)
+    k,l = np.where(ids1 == boatAV)
     
     cornerBoat4 = corners1[i[0]][j[0]]
     cornerBoat5 = corners1[k[0]][l[0]]
@@ -293,17 +296,17 @@ def getPosition(corners1, ids1, frame1):
     y = (y4 + y5)/2
     
 #--- On ajuste la position du bateau au bassin ---
-    if 0 in bordBassin and 10 in bordBassin and 1 in bordBassin:
+    if bordBassin1 in bordBassin and bordBassin2 in bordBassin:
         
-        pos = np.array([[abs(x - bordBassin[0][0])],
-                        [abs(y - bordBassin[0][1])]])
+        pos = np.array([[abs(x - bordBassin[bordBassin1][0])],
+                        [abs(y - bordBassin[bordBassin1][1])]])
     
     
         pos = getRotationMatrix(getTheta()) @ pos
         
         
-        xBoat = pos[0][0] * 3.5/(bordBassin[1][0] - bordBassin[0][0])
-        yBoat = pos[1][0] * 3/(bordBassin[10][1] - bordBassin[0][1])
+        xBoat = pos[0][0] * 3/(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])
+        yBoat = pos[1][0] * 3/(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])
 
     else:
         xBoat,yBoat = None,None
@@ -325,10 +328,10 @@ def getCap(corners1, ids1):
         angle : cap en radians 
     """
     angle = math.nan
-    if 0 in bordBassin and 10 in bordBassin:
+    if bordBassin1 in bordBassin and bordBassin2 in bordBassin:
     
-        i1,j1 = np.where(ids1 == 4)
-        i2,j2 = np.where(ids1 == 5)
+        i1,j1 = np.where(ids1 == boatAR)
+        i2,j2 = np.where(ids1 == boatAV)
     
         arucoBoat1 = corners1[i1[0]][j1[0]]
         xAr4, yAr4 = getArucoCenter(arucoBoat1)
@@ -347,12 +350,12 @@ def drawPoint(frame,pts):
     frame : frame sur laquelle il faut dessiner le point
     """
     
-    if 0 in bordBassin and 10 in bordBassin and 1 in bordBassin:
-        xPts = pts[0]*(bordBassin[1][0] - bordBassin[0][0])/3.5
-        yPts = pts[1]*(bordBassin[10][1] - bordBassin[0][1])/3
+    if bordBassin1 in bordBassin and bordBassin2 in bordBassin:
+        xPts = pts[0]*(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])/3
+        yPts = pts[1]*(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])/3
 
-        pos = np.array([[abs(xPts[0] + bordBassin[0][0])],
-                        [abs(yPts[0] + bordBassin[0][1])]])
+        pos = np.array([[abs(xPts[0] + bordBassin[bordBassin1][0])],
+                        [abs(yPts[0] + bordBassin[bordBassin1][1])]])
     
         pos =  np.linalg.inv(getRotationMatrix(getTheta())) @ pos 
  
@@ -375,11 +378,11 @@ def drawLine(frame,a,b):
 def drawBoat(frame, x,y):
     
     if not x is None and not y is None:
-        xBoat = x*(bordBassin[1][0] - bordBassin[0][0])/3.5
-        yBoat = y*(bordBassin[10][1] - bordBassin[0][1])/3
+        xBoat = x*(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])/3
+        yBoat = y*(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])/3
         
-        pos = np.array([[abs(xBoat + bordBassin[0][0])],
-                        [abs(yBoat + bordBassin[0][1])]])
+        pos = np.array([[abs(xBoat + bordBassin[bordBassin1][0])],
+                        [abs(yBoat + bordBassin[bordBassin1][1])]])
     
         pos =  np.linalg.inv(getRotationMatrix(getTheta())) @ pos 
  
@@ -403,7 +406,7 @@ def run_one_step(cap1,a,b, newcameramtx, roi, mtx, dist):
 
         
         
-        if not(ids1 is None) and len(ids1)> 0 and (4 in ids1 and 5 in ids1): #le bateau est sur la cam1 ou la cam2 (ou les deux en meme temps)
+        if not(ids1 is None) and len(ids1)> 0 and (boatAV in ids1 and boatAR in ids1): #le bateau est sur la cam1 ou la cam2 (ou les deux en meme temps)
             
             theta = getCap(corners1, ids1)
                         
@@ -452,7 +455,7 @@ def runTXT(cap1, DIM, K, D, file):
         
         corners1, ids1 = detectAruco(frame1)
         
-        if not(ids1 is None) and len(ids1)> 0 and (4 in ids1 and 5 in ids1): #le bateau est sur la cam1 ou la cam2 (ou les deux en meme temps)
+        if not(ids1 is None) and len(ids1)> 0 and (boatAV in ids1 and boatAR in ids1): #le bateau est sur la cam1 ou la cam2 (ou les deux en meme temps)
             
             theta = getCap(corners1, ids1)
                         

@@ -59,8 +59,8 @@ class Cam(Thread):
         neutreServo, neutreMoteur = 1090, 2000
         commandes = np.array([[neutreServo], [neutreMoteur]])
         
-        Waypoints = [[1,   2.5],#X
-                     [1.5, 1.5]]#Y
+        Waypoints = [[1.5, 2],#X
+                     [1.5, 2]]#Y
 #        line1 = [[1,   2.5],#X
 #                 [1, 1]]#Y
 #        line2 = [[2.5, 1],#X
@@ -70,7 +70,7 @@ class Cam(Thread):
     
 
         
-        vTarget = 0.30*0
+        vTarget = 0.28
 #        xTarget = 3.5
 #        yTarget = 0.5
 #        a = np.array([[4], [0]])    
@@ -363,11 +363,15 @@ def drawPoint(frame,pts):
         xPts = pts[0]*(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])/3
         yPts = pts[1]*(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])/3
 
+        pos = np.array([[abs(xPts[0])],
+                        [abs(yPts[0])]])
+
+        pos =  np.linalg.inv(getRotationMatrix(getTheta())) @ pos 
+        
         pos = np.array([[abs(xPts[0] + bordBassin[bordBassin1][0])],
                         [abs(yPts[0] + bordBassin[bordBassin1][1])]])
     
-        pos =  np.linalg.inv(getRotationMatrix(getTheta())) @ pos 
- 
+
         x = int(pos[0][0])
         y = int(pos[1][0])
 
@@ -387,14 +391,15 @@ def drawLine(frame,a,b):
 def drawBoat(frame, x,y):
     
     if not x is None and not y is None:
-        xBoat = x*(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])/3
-        yBoat = y*(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])/3
+        xBoat = (x*(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])/3)
+        yBoat = (y*(bordBassin[bordBassin2][1] - bordBassin[bordBassin1][1])/3)
         
         pos = np.array([[abs(xBoat + bordBassin[bordBassin1][0])],
                         [abs(yBoat + bordBassin[bordBassin1][1])]])
-    
-        pos =  np.linalg.inv(getRotationMatrix(getTheta())) @ pos 
- 
+#    
+        rot = getRotationMatrix(getTheta())
+        pos = np.linalg.inv(rot) @ pos
+# 
         xBoat = int(pos[0][0])
         yBoat = int(pos[1][0])
 
@@ -419,7 +424,7 @@ def run_one_step(cap1,a,b, newcameramtx, roi, mtx, dist):
                         
             xBoat, yBoat = getPosition(corners1, ids1, frame1)
             
-            drawBoat(frame1, xBoat, yBoat)
+#            drawBoat(frame1, xBoat, yBoat)
             
 
             

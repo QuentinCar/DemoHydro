@@ -157,7 +157,7 @@ while alive.is_set():
             nbPlot = 0
             print("-------------Update Bathymetrie------------")
             
-            pas = 1/5
+            pas = 1
             ZCont = -3*np.ones((int(4/pas), int(3/pas)))
             XCont = np.linspace(0,3,np.shape(ZCont)[1])
             YCont = np.linspace(0,4,np.shape(ZCont)[0])               

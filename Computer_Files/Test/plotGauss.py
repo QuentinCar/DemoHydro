@@ -18,11 +18,11 @@ x = np.linspace(x_min, x_max, 100)
 
 y = 2.5*std*scipy.stats.norm.pdf(x,-3,std)
 
-plt.plot(x,y, color='red')
+plt.plot(x,y, color='blue')
 
 y = 2.5*std*scipy.stats.norm.pdf(x,-1.5,std)
 
-plt.plot(x,y, color='blue')
+plt.plot(x,y, color='red')
 
 
 y = 2.5*std*scipy.stats.norm.pdf(x,0,std)

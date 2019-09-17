@@ -43,7 +43,7 @@ thread_listening.start()
 ###############################################################
 figScat = plt.figure(0)
 
-min, max = (-3, -1) #max and min for the colorbar (in meters)
+min, max = (-3, -2) #max and min for the colorbar (in meters)
 step = 0.01
 
 # Setting up a colormap that's a simple transtion
@@ -110,8 +110,8 @@ while alive.is_set():
         for x,y,z in zip(X,Y,Z):
             if xBoat > 0 and yBoat > 0 and xBoat < 4 and yBoat < 3:
                 std = 0.4
-                r = 2.5*std*scipy.stats.norm.pdf(z,-2,std)
-                g = 2.5*std*scipy.stats.norm.pdf(z,-1,std)
+                r = 2.5*std*scipy.stats.norm.pdf(z,-2.5,std)
+                g = 2.5*std*scipy.stats.norm.pdf(z,-2,std)
                 b = 2.5*std*scipy.stats.norm.pdf(z,-3,std)
             
                 col = np.array([[r,g,b]]) #blue if z = -3, green if z = 0, red if z = -1.5
@@ -157,7 +157,7 @@ while alive.is_set():
             nbPlot = 0
             print("-------------Update Bathymetrie------------")
             
-            pas = 1
+            pas = 1/10
             ZCont = -3*np.ones((int(4/pas), int(3/pas)))
             XCont = np.linspace(0,3,np.shape(ZCont)[1])
             YCont = np.linspace(0,4,np.shape(ZCont)[0])               

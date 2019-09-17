@@ -20,7 +20,7 @@ bordBassin2 = 10 #id de l'aruco (0,MaxY) du bassin
 ############# #Check adresse avec IPUtility #################################
 #############################################################################
 adressCam = 'http://root:1234@169.254.206.22/mjpg/video.mjpg'   
-#############################################################################
+ #############################################################################
 #############################################################################
 
 class Cam(Thread):
@@ -119,7 +119,7 @@ class Cam(Thread):
 #                        self.commande = (175*commandes[0,0]+neutreServo, (390*abs(commandes[1,0])) + 3000)
 #                    self.commande = (neutreServo, neutreMoteur) #on retire la regualtion
                 elif xBoat is None:
-                    print("No Boat -> Regulation remains the same")
+                    print("No Boat -> STOP")
 #                    self.commande = (neutreServo, neutreMoteur) #on arrete le bateau si on ne le voit pas 
     
     # =============================================================================
